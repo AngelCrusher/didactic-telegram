@@ -1,16 +1,20 @@
-# Python script to generate a dynamic graph for RVOL20/GEX and SPX Close price over time
+# Python script to generate a dynamic graph for RVOL20/GEX, Z-Score, and SPX Close price over time
 
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.dates import DateFormatter
 import matplotlib.dates as mdates
+from scipy.stats import zscore
 
 def plot_dynamic_graph(file_path):
     # Load the data
     df = pd.read_excel(file_path)
-    
+
     # Convert 'Date' column to datetime
     df['Date'] = pd.to_datetime(df['Date'])
+
+    # Calculate rolling 60-day z-score for RVOL20/GEX
+    df['zscore_rvol20_gex'] = df['gex/rvol20'].rolling(window=60).apply(lambda x: zscore(x)[-1] if len(x) == 60 else None)
 
     # Create the figure and axis objects
     fig, ax1 = plt.subplots(figsize=(12, 6))
@@ -21,6 +25,9 @@ def plot_dynamic_graph(file_path):
     ax1.set_ylabel('RVOL20/GEX', color='blue')
     ax1.tick_params(axis='y', labelcolor='blue')
 
+    # Plot Z-Score
+    ax1.plot(df['Date'], df['zscore_rvol20_gex'], label='Z-Score (60-day)', color='green', linestyle='--')
+
     # Create a second y-axis
     ax2 = ax1.twinx()
 
@@ -30,7 +37,7 @@ def plot_dynamic_graph(file_path):
     ax2.tick_params(axis='y', labelcolor='red')
 
     # Set title and adjust layout
-    plt.title('RVOL20/GEX and SPX Close Price Over Time')
+    plt.title('RVOL20/GEX, Z-Score (60-day), and SPX Close Price Over Time')
     fig.tight_layout()
 
     # Format x-axis to show dates nicely
@@ -47,8 +54,8 @@ def plot_dynamic_graph(file_path):
     ax1.grid(True, which='both', linestyle='--', linewidth=0.5)
 
     # Save the plot as a PNG file
-    plt.savefig('dynamic_graph.png', dpi=300, bbox_inches='tight')
-    
+    plt.savefig('dynamic_graph_with_zscore.png', dpi=300, bbox_inches='tight')
+
     # Show the plot
     plt.show()
 
