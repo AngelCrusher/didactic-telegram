@@ -34,13 +34,20 @@ def plot_dynamic_graph(file_path):
     ax1.set_ylabel('RVOL20/GEX', color='blue')
     ax1.tick_params(axis='y', labelcolor='blue')
 
-    # Plot Z-Score
-    ax1.plot(df.index, df['zscore_rvol20_gex'], label='Z-Score (60 trading days)', color='green', linestyle='--')
+    # Create a second y-axis for Z-Score
+    ax3 = ax1.twinx()
+    ax3.spines['right'].set_position(('outward', 60))  # Offset the second y-axis
 
-    # Create a second y-axis
+    # Plot Z-Score on the second y-axis
+    ax3.plot(df.index, df['zscore_rvol20_gex'], label='Z-Score (60 trading days)', color='green', linestyle='--')
+    ax3.set_ylabel('Z-Score', color='green')
+    ax3.tick_params(axis='y', labelcolor='green')
+
+    # Create a third y-axis for SPX Close price
     ax2 = ax1.twinx()
+    ax2.spines['right'].set_position(('outward', 120))  # Offset the third y-axis
 
-    # Plot SPX Close price on the second y-axis
+    # Plot SPX Close price on the third y-axis
     ax2.plot(df.index, df['SPX Close price'], label='SPX Close Price', color='red')
     ax2.set_ylabel('SPX Close Price', color='red')
     ax2.tick_params(axis='y', labelcolor='red')
@@ -57,7 +64,8 @@ def plot_dynamic_graph(file_path):
     # Add legend
     lines1, labels1 = ax1.get_legend_handles_labels()
     lines2, labels2 = ax2.get_legend_handles_labels()
-    ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper left')
+    lines3, labels3 = ax3.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2 + lines3, labels1 + labels2 + labels3, loc='upper left')
 
     # Show grid
     ax1.grid(True, which='both', linestyle='--', linewidth=0.5)
