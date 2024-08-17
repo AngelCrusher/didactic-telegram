@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.dates import DateFormatter
 import matplotlib.dates as mdates
-from scipy.stats import zscore
+import numpy as np
 
 def plot_dynamic_graph(file_path):
     # Load the data
@@ -13,31 +13,40 @@ def plot_dynamic_graph(file_path):
     # Convert 'Date' column to datetime
     df['Date'] = pd.to_datetime(df['Date'])
 
-    # Calculate rolling 60-day z-score for RVOL20/GEX
-    df['zscore_rvol20_gex'] = df['gex/rvol20'].rolling(window=60).apply(lambda x: zscore(x)[-1] if len(x) == 60 else None)
+    # Set 'Date' as the index
+    df.set_index('Date', inplace=True)
+
+    # Calculate rolling 60-trading-day z-score for RVOL20/GEX
+    def custom_zscore(x):
+        if len(x) < 2:
+            return np.nan
+        return (x.iloc[-1] - np.nanmean(x)) / np.nanstd(x, ddof=1)
+
+    # Use a 60 trading day window (approximately 3 months)
+    df['zscore_rvol20_gex'] = df['gex/rvol20'].rolling(window='60D', min_periods=2).apply(custom_zscore)
 
     # Create the figure and axis objects
     fig, ax1 = plt.subplots(figsize=(12, 6))
 
     # Plot RVOL20/GEX
-    ax1.plot(df['Date'], df['gex/rvol20'], label='RVOL20/GEX', color='blue')
+    ax1.plot(df.index, df['gex/rvol20'], label='RVOL20/GEX', color='blue')
     ax1.set_xlabel('Date')
     ax1.set_ylabel('RVOL20/GEX', color='blue')
     ax1.tick_params(axis='y', labelcolor='blue')
 
     # Plot Z-Score
-    ax1.plot(df['Date'], df['zscore_rvol20_gex'], label='Z-Score (60-day)', color='green', linestyle='--')
+    ax1.plot(df.index, df['zscore_rvol20_gex'], label='Z-Score (60 trading days)', color='green', linestyle='--')
 
     # Create a second y-axis
     ax2 = ax1.twinx()
 
     # Plot SPX Close price on the second y-axis
-    ax2.plot(df['Date'], df['SPX Close price'], label='SPX Close Price', color='red')
+    ax2.plot(df.index, df['SPX Close price'], label='SPX Close Price', color='red')
     ax2.set_ylabel('SPX Close Price', color='red')
     ax2.tick_params(axis='y', labelcolor='red')
 
     # Set title and adjust layout
-    plt.title('RVOL20/GEX, Z-Score (60-day), and SPX Close Price Over Time')
+    plt.title('RVOL20/GEX, Z-Score (60 trading days), and SPX Close Price Over Time')
     fig.tight_layout()
 
     # Format x-axis to show dates nicely
